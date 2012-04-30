@@ -1,0 +1,11 @@
+# Copy this file to `settings_local.py' and edit it as appropriate
+
+# Path to raw images
+IMAGE_ROOT = '/path/to/raw_image_directory'
+
+# Path to generated images. Must be writeable by the user running the server
+IMAGE_CACHE_ROOT = '/path/to/cached_image_directory'
+
+#STRIP_PREFIX = ''
+#MAX_DIMEN = 4000
+#CONVERT_CMD = '/sw/bin/convert'
