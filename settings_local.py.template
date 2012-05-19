@@ -9,3 +9,9 @@ IMAGE_CACHE_ROOT = '/path/to/cached_image_directory'
 #STRIP_PREFIX = ''
 #MAX_DIMEN = 4000
 #CONVERT_CMD = '/sw/bin/convert'
+#VERBOSE = False
+
+# Enable to protect images by only serving if the hash path matches
+#ENABLE_HASH_PATH = True
+#HASH_PATH_LENGTH = 6
+#SECRET_HASH_KEY = ''

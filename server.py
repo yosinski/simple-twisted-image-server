@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
 import subprocess
 import sys
@@ -14,6 +14,7 @@ from twisted.python.log import err
 from twisted.internet import reactor, defer
 
 import settings
+from util import computeHash
 
 
 
@@ -26,7 +27,8 @@ def randomString(length = 10):
 
 
 def runCmd(args):
-    print 'Running command:', ' '.join(args)
+    if settings.VERBOSE:
+        print 'Running command:', ' '.join(args)
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out,err = proc.communicate()
     code = proc.wait()
@@ -50,7 +52,8 @@ def startServingFile(deferred, origFilename, genFilename, convertStr):
             print 'Error: original file %s does not exist and generation impossible' % origFilename
             deferred.errback()
             return
-        print 'Serving original file: %s' % origFilename
+        if settings.VERBOSE:
+            print 'Serving original file: %s' % origFilename
         deferred.callback(ff)
         return
 
@@ -60,12 +63,18 @@ def startServingFile(deferred, origFilename, genFilename, convertStr):
         try:
             ff = open(genFilename, 'r')
             success = True
-            print 'Serving cached generated file: %s' % genFilename
+            if settings.VERBOSE:
+                print 'Serving cached generated file: %s' % genFilename
         except IOError:
             pass
 
         if success:
             deferred.callback(ff)
+            return
+
+        if not os.path.exists(origFilename):
+            print 'Error: Trying to convert %s but it does not exist' % origFilename
+            deferred.errback()
             return
 
         tmpGenFilename = genFilename + '.tmp_' + randomString(6)
@@ -74,7 +83,8 @@ def startServingFile(deferred, origFilename, genFilename, convertStr):
         shutil.move(tmpGenFilename, genFilename)
 
         ff = open(genFilename, 'r')  # should now work
-        print 'Serving freshly generated file: %s' % genFilename
+        if settings.VERBOSE:
+            print 'Serving freshly generated file: %s' % genFilename
         deferred.callback(ff)
 
 
@@ -106,11 +116,13 @@ class ImageResource(resource.Resource):
     def render_GET(self, request):
         try:
             self.processRequest(request)
-        except:
-            print 'Exception (returned 404):'
-            print '-'*60
-            traceback.print_exc(file=sys.stderr)
-            print '-'*60
+        except Exception as exep:
+            print 'Error:', exep
+            if settings.VERBOSE:
+                print 'Exception (returned 404):'
+                print '-'*60
+                traceback.print_exc(file=sys.stderr)
+                print '-'*60
             request.setResponseCode(404)
             request.write(settings.STR404)
             request.finish()
@@ -122,8 +134,21 @@ class ImageResource(resource.Resource):
             raise Exception('Expected path "%s" to start with "%s"' % (request.path, settings.STRIP_PREFIX))
 
         path = request.path[lenPrefix:]
+        if settings.VERBOSE:
+            print 'path is', repr(path)
 
+        if settings.ENABLE_HASH_PATH:
+            receivedHash = path[:settings.HASH_PATH_LENGTH]
+            path = path[settings.HASH_PATH_LENGTH + 1:]  # strip hash from path
+            correctHash = computeHash(path, settings.SECRET_HASH_KEY, settings.HASH_PATH_LENGTH)
+            if settings.VERBOSE:
+                print '  correctHash is', correctHash, ', receivedHash is', receivedHash, 
+            if receivedHash != correctHash:
+                raise Exception('Expected hash %s for path %s but got %s' % (correctHash, path, receivedHash))
+        
         parts = path.rsplit('.', 2)
+        if settings.VERBOSE:
+            print 'parts is', repr(parts)
 
         # default values
         convertStr = None
