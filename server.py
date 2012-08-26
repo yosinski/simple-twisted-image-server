@@ -78,8 +78,13 @@ def startServingFile(deferred, origFilename, genFilename, convertStr):
             return
 
         tmpGenFilename = genFilename + '.tmp_' + randomString(6)
-        completeConvertStr = '%s^>' % convertStr
+        # See http://www.imagemagick.org/Usage/resize/#resize for options
+        # ^ = fill, > = only shrink larger images
+        #completeConvertStr = '%s^>' % convertStr
+        completeConvertStr = '%s>' % convertStr
         out,err = runCmd((settings.CONVERT_CMD, origFilename, '-resize', completeConvertStr, tmpGenFilename))
+        if settings.VERBOSE:
+            print ''
         shutil.move(tmpGenFilename, genFilename)
 
         ff = open(genFilename, 'r')  # should now work
