@@ -78,6 +78,8 @@ def startServingFile(deferred, origFilename, genFilename, convertStr):
             return
 
         tmpGenFilename = genFilename + '.tmp_' + randomString(6)
+        # Make directories if they don't exist
+        os.makedirs(os.path.dirname(tmpGenFilename))
         # See http://www.imagemagick.org/Usage/resize/#resize for options
         # ^ = fill, > = only shrink larger images
         #completeConvertStr = '%s^>' % convertStr
@@ -122,7 +124,7 @@ class ImageResource(resource.Resource):
         try:
             self.processRequest(request)
         except Exception as exep:
-            print 'Error:', exep
+            print '\nError:', exep
             if settings.VERBOSE:
                 print 'Exception (returned 404):'
                 print '-'*60
@@ -147,7 +149,7 @@ class ImageResource(resource.Resource):
             path = path[settings.HASH_PATH_LENGTH + 1:]  # strip hash from path
             correctHash = computeHash(path, settings.SECRET_HASH_KEY, settings.HASH_PATH_LENGTH)
             if settings.VERBOSE:
-                print '  correctHash is', correctHash, ', receivedHash is', receivedHash, 
+                print '  correctHash is', correctHash, ', receivedHash is', receivedHash,
             if receivedHash != correctHash:
                 raise Exception('Expected hash %s for path %s but got %s' % (correctHash, path, receivedHash))
         
@@ -165,7 +167,7 @@ class ImageResource(resource.Resource):
         elif len(parts) == 2:
             pass
         else:
-            # 3 parts: try the second string as a geometry specifier and normalize it
+            # Maximum of 3 parts: try the second string as a geometry specifier and normalize it
             origFilename = os.path.join(settings.IMAGE_ROOT, parts[0] + '.' + parts[2])
             geomParts = parts[1].split('x')
             if len(geomParts) == 1:
