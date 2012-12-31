@@ -8,6 +8,8 @@ import string
 import random
 import mimetypes
 import traceback
+import urllib
+import pdb
 from twisted.web import server, resource
 from twisted.protocols.basic import FileSender
 from twisted.python.log import err
@@ -140,8 +142,11 @@ class ImageResource(resource.Resource):
         if request.path[0:lenPrefix] != settings.STRIP_PREFIX:
             raise Exception('Expected path "%s" to start with "%s"' % (request.path, settings.STRIP_PREFIX))
 
-        path = request.path[lenPrefix:]
+        rawPath = request.path[lenPrefix:]
+        path = urllib.unquote(rawPath)
+        
         if settings.VERBOSE:
+            print 'rawPath is', repr(rawPath)
             print 'path is', repr(path)
 
         if settings.ENABLE_HASH_PATH:
